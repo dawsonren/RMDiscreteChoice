@@ -34,6 +34,9 @@ def calc_EMSRb(fares: np.ndarray, demands: np.ndarray, sigmas=None):
     """
     # initialize protection levels y
     y = np.zeros(len(fares) - 1)
+    # NOTE: set in stone here, the authors do not provide
+    q = 0.3
+    # NOTE: also assume customers buy-up to next highest class
 
     if sigmas is None or np.all(sigmas == 0):
         # Deterministic EMSRb
@@ -42,9 +45,10 @@ def calc_EMSRb(fares: np.ndarray, demands: np.ndarray, sigmas=None):
         for j in range(1, len(fares)):
             S_j = demands[:j].sum()
             # eq. 2.13
-            p_j_bar = np.sum(demands[:j]*fares[:j]) / demands[:j].sum()
+            p_j_bar = np.sum(demands[:j] * fares[:j]) / demands[:j].sum()
             p_j_plus_1 = fares[j]
-            z_alpha = norm.ppf(1 - p_j_plus_1 / p_j_bar)
+            p_j_minus_1 = fares[j-1]
+            z_alpha = norm.ppf(1 - (p_j_plus_1 - q * p_j_minus_1) / (p_j_bar * (1 - q)))
             # sigma of joint distribution
             sigma = np.sqrt(np.sum(sigmas[:j]**2))
             # mean of joint distribution

@@ -62,19 +62,22 @@ def simulate(T, C, arrival_rate, w, emsr_assort, action_fcn):
     """
     esmr_purchases = np.full(T, -2, dtype=int)  # -2=no arrival, -1=no purchase
     mnl_purchases = np.full(T, -2, dtype=int)
+    esmr_offers = []
+    mnl_offers = []
     rem_budget_emsr = C
     rem_budget_mnl = C
 
     # Pre-generate arrivals and uniforms for choice inversion
     arrivals = np.random.rand(T) < arrival_rate
-    unifs = np.random.rand(T)
 
     for period in range(T):
         t_remaining = T - 1 - period
         # lookup EMSR assortment
         S_emsr = emsr_assort[t_remaining][rem_budget_emsr]
-        # MNL assortment would be looked up elsewhere
+        # lookup MNL assortment
         S_mnl = action_fcn[rem_budget_mnl][t_remaining]
+        esmr_offers.append(S_emsr)
+        mnl_offers.append(S_mnl)
 
         if not arrivals[period]:
             esmr_purchases[period] = -2
@@ -95,7 +98,7 @@ def simulate(T, C, arrival_rate, w, emsr_assort, action_fcn):
         else:
             mnl_purchases[period] = -1
 
-    return esmr_purchases, mnl_purchases
+    return esmr_purchases, mnl_purchases, esmr_offers, mnl_offers
 
 def calculate_statistics(purchases, C):
     """

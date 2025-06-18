@@ -15,11 +15,56 @@ ActionFcn = Dict[Tuple[int, int], List[int]]
 
 def mnl(j: int, S: List[int], u: List[float]) -> float:
     """MNL choice probability."""
-    if j not in S:
+    if j != -1 and j not in S:
         return 0.0
     exp_u = np.exp([u[i] for i in S])
     denom = 1 + np.sum(exp_u)
-    return np.exp(u[j]) / denom
+    num = np.exp(u[j]) if j != -1 else 1.0
+    return num / denom
+
+def exponomial(j: int, S: List[int], u: List[float]) -> float:
+    """
+    Exponomial choice probability P_j given:
+      j: 0-based index of the chosen alternative (0 <= j < n)
+      S: set of 0-based indices offered (subset of {0,...,n-1})
+      u: list of utilities of length n, sorted nonincreasingly
+    
+    Returns
+    -------
+    float
+        Choice probability of alternative j.
+    """
+    n = len(u)
+    if j != -1 and j not in S:
+        return 0.0
+    
+    # build bit‐vector
+    x = [1 if i in S else 0 for i in range(n)]
+    
+    # prefix sums
+    X = [0] * n
+    running = 0
+    for i in range(n):
+        running += x[i]
+        X[i] = running
+    
+    # compute G
+    G = [0.0] * n
+    for i in range(n):
+        if X[i] > 0:
+            exponent = 0.0
+            for k in range(i+1):
+                if x[k]:
+                    exponent -= (u[k] - u[i])
+            G[i] = np.exp(exponent) / X[i]
+    
+    # correction term
+    correction = 0.0
+    for k in range(j+1, n):
+        if x[k] and X[k-1] > 0:
+            correction += G[k] / X[k-1]
+    
+    return G[j] - correction
 
 def R(S: List[int], r: List[float], u: List[float], P: ChoiceModel) -> float:
     """Expected revenue from assortment S."""
